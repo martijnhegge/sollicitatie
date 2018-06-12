@@ -114,3 +114,63 @@ public bool insert_appointment(string name, string title, DateTimePicker date, D
     }
     return Success;
 }
+
+// login for application
+
+public bool inloggen(string mail, string pass)
+{
+
+    HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(string.Format(@"http://projectexecution.nl/MY_API/?action=login_func&mail={0}&pass={1}", mail, pass));
+    request.ContentType = "application/json";
+    request.Method = "GET";
+
+
+    using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
+    {
+        if (response.StatusCode != HttpStatusCode.OK)
+            Console.Out.WriteLine("Error fetching data. Server returned status code: {0}", response.StatusCode);
+        using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+        {
+
+            var content = reader.ReadToEnd();
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                Console.Out.WriteLine("Response contained empty body...");
+            }
+            else
+            {
+                if (content.ToString().Contains("0"))
+                {
+                    JArray jsonArray = JArray.Parse(content);
+                    dynamic json = JObject.Parse(jsonArray[0].ToString());
+                    UserName = json.name;
+                    Success = true;
+                    Admin = 0;
+                    Console.Out.WriteLine("Response: ingelogd! Geen admin|name: {0}", UserName);
+                }
+                else if (content.ToString().Contains("1"))
+                {
+                    JArray jsonArray = JArray.Parse(content);
+                    dynamic json = JObject.Parse(jsonArray[0].ToString());
+                    UserName = json.name;
+                    Success = true;
+                    Admin = 1;
+                    Console.Out.WriteLine("Response: ingelogd! admin|name: {0}", UserName);
+                }
+                else
+                {
+                    //content.ToString();
+                    /*JArray jsonArray = JArray.Parse(content);
+                    dynamic json = JObject.Parse(jsonArray[0].ToString());  */
+                    Success = false;
+                    LoginError = content;
+                    jsonReturn = content;
+                    Console.Out.WriteLine("Response: niet ingelogd! reden: {0}", content);
+                }
+
+            }
+            //Assert.NotNull(content);
+        }
+    }
+    return Success;
+}
